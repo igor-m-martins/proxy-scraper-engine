@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Scraper Dashboard</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f4f4f9; color: #333; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        input, button { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background: #007bff; color: white; border: none; cursor: pointer; font-weight: bold; }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .actions { margin-top: 20px; display: none; }
+        pre { background: #f8f9fa; padding: 15px; border-radius: 5px; max-height: 350px; overflow: auto; border: 1px solid #ddd; }
+        .download-group { display: flex; gap: 10px; margin-top: 10px; }
+        .download-group button { background: #28a745; }
+        .download-group button:hover { background: #218838; }
+        #statusMsg { font-weight: bold; color: #555; margin: 10px 0; }
+        
+        .url-row { display: flex; gap: 10px; align-items: center; margin-bottom: 5px; }
+        .url-row input { margin: 0; flex: 1; }
+        .btn-remove { background: #dc3545; width: 45px; padding: 12px 0; margin: 0; }
+        .btn-remove:hover { background: #c82333; }
+        #addUrlBtn { background: #6c757d; margin-top: 5px; margin-bottom: 15px; }
+        #addUrlBtn:hover { background: #5a6268; }
+
+        .info-box {
+            background: #e8f0fe;
+            border: 1px solid #d2e3fc;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        .info-box h4 { color: #1a73e8; margin-top: 0; margin-bottom: 8px; font-size: 15px; }
+        .info-box ul { margin: 0; padding-left: 20px; color: #3c4043; font-size: 14px; }
+        .info-box li { margin-bottom: 4px; }
+
+        .docs-link {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+        .docs-link a { color: #007bff; text-decoration: none; font-weight: bold; }
+        .docs-link a:hover { text-decoration: underline; }
+
+        .upwork-cta {
+            background: #e6f4ea;
+            border: 1px solid #ceead6;
+            padding: 20px;
+            border-radius: 6px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        .upwork-cta h4 { color: #137333; margin-top: 0; margin-bottom: 8px; }
+        .upwork-cta p { color: #202124; font-size: 14px; margin-bottom: 15px; }
+        .upwork-btn {
+            background: #108a00;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            display: inline-block;
+            width: auto;
+            margin: 0;
+        }
+        .upwork-btn:hover { background: #14a800; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Scraper Dashboard (Free Demo - Up to 3 Pages)</h2>
+        
+        <div class="info-box">
+            <h4>What information will be extracted?</h4>
+            <ul>
+                <li><strong>Page Title:</strong> The main title extracted from the meta/header tags.</li>
+                <li><strong>E-mails:</strong> Contact e-mail addresses found in the page text.</li>
+                <li><strong>Phone Numbers:</strong> Formatted telephone numbers detected on the site.</li>
+                <li><strong>Social Links:</strong> Direct links to social media profiles.</li>
+            </ul>
+        </div>
+
+        <div id="urlContainer">
+            <div class="url-row">
+                <input type="text" class="url-input" placeholder="Enter target URL (e.g., https://example.com)">
+            </div>
+        </div>
+
+        <button id="addUrlBtn" onclick="addUrlField()">+ Add Another URL</button>
+        <button id="scrapeBtn" onclick="runScrape()">Start Scraping</button>
+        
+        <div class="docs-link">
+            <a href="README.md" target="_blank">📖 Curious about how it works? Read the project README</a>
+        </div>
+
+        <div id="statusMsg"></div>
+
+        <div id="results" class="actions">
+            <h3>Collected Data:</h3>
+            <pre id="jsonOutput"></pre>
+            
+            <div class="download-group">
+                <button onclick="download('json')">Save as JSON</button>
+                <button onclick="download('csv')">Save as CSV</button>
+                <button onclick="download('sql')">Save as SQL</button>
+            </div>
+
+
+            <div class="upwork-cta">
+                <h4>Need to scrape more pages or scale this project?</h4>
+                <p>This demo is limited to 3 pages. If you need full access, automated pipelines, or a custom solution for your business, let's talk!</p>
+                <a href="https://www.upwork.com/freelancers/~0130da7eb010a1da56" target="_blank" class="upwork-btn">Hire Me on Upwork / Full Access</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let latestData = null;
+        const API_BASE_URL = "http://eliteworldwideholding.pythonanywhere.com";
+        const MAX_URLS = 3;
+
+        function addUrlField() {
+            const container = document.getElementById('urlContainer');
+            const currentRows = container.getElementsByClassName('url-row').length;
+
+            if (currentRows >= MAX_URLS) {
+                alert("Maximum limit of 3 URLs reached for the free demo.");
+                return;
+            }
+
+            const row = document.createElement('div');
+            row.className = 'url-row';
+            row.innerHTML = `
+                <input type="text" class="url-input" placeholder="Enter target URL">
+                <button class="btn-remove" onclick="removeUrlField(this)">X</button>
+            `;
+            container.appendChild(row);
+
+            if (container.getElementsByClassName('url-row').length >= MAX_URLS) {
+                document.getElementById('addUrlBtn').disabled = true;
+            }
+        }
+
+        function removeUrlField(button) {
+            const row = button.parentElement;
+            row.remove();
+            
+            const container = document.getElementById('urlContainer');
+            if (container.getElementsByClassName('url-row').length < MAX_URLS) {
+                document.getElementById('addUrlBtn').disabled = false;
+            }
+        }
+
+        async function runScrape() {
+            const inputs = document.querySelectorAll('.url-input');
+            const urls = Array.from(inputs).map(input => input.value.trim()).filter(u => u.length > 0);
+
+            if (urls.length === 0) {
+                alert("Please enter at least one URL.");
+                return;
+            }
+
+            const btn = document.getElementById('scrapeBtn');
+            const statusMsg = document.getElementById('statusMsg');
+            const resultsDiv = document.getElementById('results');
+
+            btn.disabled = true;
+            resultsDiv.style.display = 'none';
+            statusMsg.innerText = "Sending request to PythonAnywhere...";
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/scraper/api/scrape`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ urls: urls })
+                });
+                
+                const job = await response.json();
+                if (!job.job_id) throw new Error(job.error || "Failed to start job");
+
+                pollJobStatus(job.job_id, btn, statusMsg, resultsDiv);
+
+            } catch (e) {
+                alert("Error connecting to server: " + e.message);
+                btn.disabled = false;
+                statusMsg.innerText = "";
+            }
+        }
+
+        async function pollJobStatus(jobId, btn, statusMsg, resultsDiv) {
+            const pollInterval = setInterval(async () => {
+                try {
+                    const res = await fetch(`${API_BASE_URL}/scraper/api/jobs/${jobId}`);
+                    const data = await res.json();
+
+                    if (data.status === "processing" || data.status === "queued") {
+                        statusMsg.innerText = `Status: ${data.status.toUpperCase()}... Processing pages via Relay/FlareSolverr.`;
+                    } else if (data.status === "completed") {
+                        clearInterval(pollInterval);
+                        latestData = data;
+                        document.getElementById('jsonOutput').innerText = JSON.stringify(data, null, 2);
+                        resultsDiv.style.display = 'block';
+                        statusMsg.innerText = "Scraping completed successfully!";
+                        btn.disabled = false;
+                    } else {
+                        clearInterval(pollInterval);
+                        statusMsg.innerText = "Job failed or returned an unexpected status.";
+                        btn.disabled = false;
+                    }
+                } catch (err) {
+                    clearInterval(pollInterval);
+                    statusMsg.innerText = "Error checking job status.";
+                    btn.disabled = false;
+                }
+            }, 2500);
+        }
+
+        function download(type) {
+            if (!latestData || !latestData.results) return;
+            let dataStr = "";
+            let filename = "scrape_data." + type;
+
+            if (type === 'json') {
+                dataStr = JSON.stringify(latestData, null, 2);
+            } else if (type === 'csv') {
+                dataStr = "url,title,emails,phones\n";
+                latestData.results.forEach(r => {
+                    const emails = (r.emails || []).join(";");
+                    const phones = (r.phones || []).join(";");
+                    dataStr += `"${r.url}","${r.title || ''}","${emails}","${phones}"\n`;
+                });
+            } else if (type === 'sql') {
+                dataStr = "";
+                latestData.results.forEach(r => {
+                    const url = (r.url || "").replace(/'/g, "''");
+                    const title = (r.title || "").replace(/'/g, "''");
+                    const emails = (r.emails || []).join(", ").replace(/'/g, "''");
+                    const phones = (r.phones || []).join(", ").replace(/'/g, "''");
+                    dataStr += `INSERT INTO scraped_sites (url, title, emails, phones) VALUES ('${url}', '${title}', '${emails}', '${phones}');\n`;
+                });
+            }
+
+            const blob = new Blob([dataStr], { type: 'text/plain;charset=utf-8' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+        }
+    </script>
+</body>
+</html>
