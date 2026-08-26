@@ -9,7 +9,7 @@ A robust, asynchronous web scraping architecture designed to bypass strict anti-
 ```text
 +------------------------+       POST /scrape      +------------------------+
 |                        | --------------------->  |                        |
-|   Client / Dashboard   |                         |   Main API (Flask)     |
+|   Client / Dashboard   |                         |    Main API (Flask)    |
 |   (HTML / JavaScript)  | <---------------------  |   (Async Worker Pool)  |
 +------------------------+       Job Status        +------------------------+
                                                               |
@@ -19,14 +19,14 @@ A robust, asynchronous web scraping architecture designed to bypass strict anti-
                                                               v
                                                    +------------------------+
                                                    |      Relay Proxy       |
-                                                   |     (SSRF Protected)   |
+                                                   |    (SSRF Protected)    |
                                                    +------------------------+
                                                               |
                                                        POST /v1 (JSON)
                                                               |
                                                               v
                                                    +------------------------+
-                                                   |      FlareSolverr      |
+                                                   | Bypass & Solver Engine |
                                                    |  (Headless Browser /   |
                                                    |   Anti-Bot Solver)     |
                                                    +------------------------+
@@ -34,8 +34,8 @@ A robust, asynchronous web scraping architecture designed to bypass strict anti-
                                                               v
                                                    +------------------------+
                                                    |    Target Websites     |
-                                                   |  (Cloudflare / Bot-    |
-                                                   |   Protected Targets)   |
+                                                   |(Bot Protected Targets) |
+                                                   |                        |
                                                    +------------------------+
 ```
 
