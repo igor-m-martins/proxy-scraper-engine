@@ -195,7 +195,7 @@
                     const data = await res.json();
 
                     if (data.status === "processing" || data.status === "queued") {
-                        statusMsg.innerText = `Status: ${data.status.toUpperCase()}... Processing pages via Relay/FlareSolverr.`;
+                        statusMsg.innerText = `Status: ${data.status.toUpperCase()}... Processing pages via Relay.`;
                     } else if (data.status === "completed") {
                         clearInterval(pollInterval);
                         latestData = data;
