@@ -16,6 +16,18 @@
         .download-group button { background: #28a745; }
         .download-group button:hover { background: #218838; }
         #statusMsg { font-weight: bold; color: #555; margin: 10px 0; }
+        .blocked-alert {
+            display: none;
+            background: #fff4e5;
+            border: 1px solid #f0ad4e;
+            color: #6b3d00;
+            padding: 16px;
+            border-radius: 6px;
+            margin: 12px 0 20px;
+        }
+        .blocked-alert h4 { margin: 0 0 8px; color: #8a4b00; }
+        .blocked-alert p { margin: 0 0 12px; }
+        .blocked-alert a { color: #7a3f00; font-weight: bold; }
         
         .url-row { display: flex; gap: 10px; align-items: center; margin-bottom: 5px; }
         .url-row input { margin: 0; flex: 1; }
@@ -95,6 +107,13 @@
         </div>
 
         <div id="statusMsg"></div>
+        <div id="blockedAlert" class="blocked-alert" role="alert">
+            <h4>Unable to access this page.</h4>
+            <p id="blockedAlertText">The request was blocked due to advanced bot protection.</p>
+            <a href="https://www.upwork.com/freelancers/~0130da7eb010a1da56" target="_blank" rel="noopener">
+                Contact us to verify the technical feasibility of the scraping.
+            </a>
+        </div>
 
         <div id="results" class="actions">
             <h3>Collected Data:</h3>
@@ -164,6 +183,7 @@
             const btn = document.getElementById('scrapeBtn');
             const statusMsg = document.getElementById('statusMsg');
             const resultsDiv = document.getElementById('results');
+            document.getElementById('blockedAlert').style.display = 'none';
 
             btn.disabled = true;
             resultsDiv.style.display = 'none';
@@ -199,6 +219,14 @@
                     } else if (data.status === "completed") {
                         clearInterval(pollInterval);
                         latestData = data;
+                        const blockedResult = (data.results || []).find(result => result.blocked || result.status_code === 500);
+                        if (blockedResult) {
+                            const blockedAlert = document.getElementById('blockedAlert');
+                            const blockedText = document.getElementById('blockedAlertText');
+                            blockedText.innerText = blockedResult.user_message ||
+                                "A requisição foi bloqueada devido a uma proteção avançada de bot.";
+                            blockedAlert.style.display = 'block';
+                        }
                         document.getElementById('jsonOutput').innerText = JSON.stringify(data, null, 2);
                         resultsDiv.style.display = 'block';
                         statusMsg.innerText = "Scraping completed successfully!";
